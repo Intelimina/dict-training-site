@@ -10,17 +10,16 @@ jobs:
         run: |
           # Set SSH key
           mkdir -p ~/.ssh/
-          echo '${{ secrets.DEPLOY_RSA_KEY_ENC }}' > ~/.ssh/deploy_id_rsa_enc
-          /usr/bin/openssl enc -d -aes-256-cbc -md sha512 -salt -in ~/.ssh/deploy_id_rsa_enc -out ~/.ssh/deploy_id_rsa -k ${{ secrets.DEPLOY_KEY_DECRYPT_SECRET }} -a -pbkdf2
-          /usr/bin/chmod 0600 ~/.ssh/deploy_id_rsa
+          echo '${{ secrets.DEPLOY_KEY }}' > ~/.ssh/deploy_key.pem
+          /usr/bin/chmod 0600 ~/.ssh/deploy_key.pem
 
           # Set SSH_AUTH_SOCK
           /usr/bin/ssh-agent -a /tmp/ssh-auth.sock
           SSH_AUTH_SOCK=/tmp/ssh-auth.sock; export SSH_AUTH_SOCK;
-          /usr/bin/ssh-add ~/.ssh/deploy_id_rsa
+          /usr/bin/ssh-add ~/.ssh/deploy_key.pem
       - uses: actions/checkout@v3
-      - name: Rsync current files
+      - name: rsync current files
         run: |
           DEPLOY_FOLDER="${{ github.ref_name }}"
           DEPLOY_FOLDER=${DEPLOY_FOLDER//[^[:alnum:]]/-}
-          rsync -av -i ~/.ssh/deploy_id_rsa ./ ubuntu@dict-training.intelimina.com:/var/www/site/$DEPLOY_FOLDER/
+          rsync -av -i ~/.ssh/deploy_key.pem ./ ubuntu@dict-training.intelimina.com:/var/www/site/$DEPLOY_FOLDER/
